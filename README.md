@@ -16,8 +16,10 @@ Things a visitor can do, not just read:
   in the browser.
 - **"Attack this page"** (BUILD, Security): the page tries six injection
   tricks on itself and reports what the browser's CSP blocked.
-- **"What you just told me"** (BREAK, Security): what the visitor's browser
-  gave away, read locally and sent nowhere.
+- **"What you just told me"** (BREAK, Security): the visitor's IP address and
+  rough location (from the request, via `src/lib/visitor.ts`) and what their
+  browser gave away, down to a fingerprint. Shown back to them and not kept.
+  Location needs Vercel's geo headers, so it only appears once deployed there.
 
 ## Run it
 

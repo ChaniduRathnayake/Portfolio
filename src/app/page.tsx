@@ -23,6 +23,7 @@ import { ToolName, Tools } from "@/components/ui/TechLogo";
 import { allSkills, education, experience, modeCopy, profile, security, type Certification, type SkillGroup } from "@/content/profile";
 import { projectsFor, type Project } from "@/content/projects";
 import { SECURITY_HEADERS } from "@/lib/security/headers";
+import { readVisitor } from "@/lib/visitor";
 
 /** Same file the CRT screen dithers. Optional: the figure only renders once the file exists. */
 const PORTRAIT_SRC = "/images/portrait.jpg";
@@ -163,7 +164,10 @@ function Certifications({ track }: { track: Certification["track"] }) {
 export default async function HomePage() {
   const hasPortrait = inPublic(PORTRAIT_SRC);
   // The contact form's optional Turnstile script needs the request's CSP nonce.
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
+  // Shown back to the visitor in "What you just told me". Not stored.
+  const visitor = readVisitor(requestHeaders);
   const [currentJob] = experience;
   const [degree] = education;
   const attackCerts = security.certifications.filter((c) => c.track === "attack").length;
@@ -413,7 +417,7 @@ export default async function HomePage() {
             />
 
             {/* Full width underneath: something to do on each side. */}
-            <ByMode className="pane lg:col-span-2" build={<PolicyTest />} brk={<Recon />} />
+            <ByMode className="pane lg:col-span-2" build={<PolicyTest />} brk={<Recon visitor={visitor} />} />
           </div>
         </section>
 

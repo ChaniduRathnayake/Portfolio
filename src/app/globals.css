@@ -1150,6 +1150,10 @@ html[data-mode="break"] .only-build {
   .recon dd {
     overflow-wrap: anywhere;
   }
+  .recon .is-flagged dt,
+  .recon .is-flagged dd {
+    color: var(--active-accent);
+  }
 
   /* Line diagrams for projects without screenshots. */
   .diagram {
