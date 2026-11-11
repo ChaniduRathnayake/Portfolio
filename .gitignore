@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Next.js build output
+.next/
+out/
+build/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment and secrets (Resend API key, Turnstile secret, ...)
+# Commit a .env.example with empty values instead.
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel
+
+# Testing and audits
+coverage/
+playwright-report/
+test-results/
+lighthouse/
+*.lighthouseci/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Private documents: keep the full CV (ID number, address, phone, references)
+# out of the repo. Put a redacted copy at public/resume.pdf instead.
+*CV*.pdf
+*cv*.pdf
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.pem
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp

@@ -1,0 +1,1636 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Design tokens. The single source of colour for HTML *and* WebGL
+   (src/lib/theme.ts reads these custom properties into three.js).
+
+   Palette A (phosphor) is the default. To ship another palette, change the
+   default data-palette in layout.tsx; visitors can also try them from the
+   terminal: `theme amber`.
+   ========================================================================== */
+
+:root,
+[data-palette="phosphor"] {
+  --bg-void: #06110b;
+  --bg-surface: #0b1d13;
+  --primary: #3dff8f;
+  --dim: #1e7a4a;
+  --text-main: #cfefd9;
+  --text-muted: #8dbf9f;
+  --alert: #ff3b3b;
+}
+
+[data-palette="amber"] {
+  --bg-void: #0e0904;
+  --bg-surface: #1a1108;
+  --primary: #ffb000;
+  --dim: #8a5a00;
+  --text-main: #f3e3c3;
+  --text-muted: #c2a678;
+  --alert: #5fe1ff;
+}
+
+[data-palette="thermal"] {
+  --bg-void: #070a1a;
+  --bg-surface: #0f1430;
+  --primary: #ff2e88;
+  --dim: #29d3ff;
+  --text-main: #e9ecff;
+  --text-muted: #a3acd9;
+  --alert: #ffd23f;
+}
+
+/* Derived tokens. BREAK swaps the accent to the alert colour everywhere. */
+:root {
+  --active-accent: var(--primary);
+  --line: color-mix(in srgb, var(--dim) 55%, transparent);
+}
+[data-mode="break"] {
+  --active-accent: var(--alert);
+  --line: color-mix(in srgb, var(--alert) 45%, transparent);
+}
+
+@theme inline {
+  --color-void: var(--bg-void);
+  --color-surface: var(--bg-surface);
+  --color-primary: var(--primary);
+  --color-dim: var(--dim);
+  --color-text: var(--text-main);
+  --color-muted: var(--text-muted);
+  --color-alert: var(--alert);
+  --color-accent: var(--active-accent);
+  --color-line: var(--line);
+
+  --font-serif: var(--font-instrument-serif), Georgia, serif;
+  --font-mono: var(--font-martian-mono), ui-monospace, monospace;
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-radius: 0;
+  }
+
+  html {
+    background: var(--bg-void);
+    color: var(--text-main);
+    color-scheme: dark;
+    /* Archivo at ~110% width. Only Archivo has a width axis, so this leaves
+       the mono and serif faces alone. */
+    font-stretch: 110%;
+  }
+
+  body {
+    min-height: 100svh;
+    background: var(--bg-void);
+    overflow-x: clip;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Strict left alignment and a readable measure. */
+  p,
+  li,
+  dd {
+    text-align: left;
+    max-width: 68ch;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: var(--active-accent);
+    color: var(--bg-void);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--active-accent);
+    outline-offset: 3px;
+  }
+}
+
+/* ==========================================================================
+   Two sides. Content that differs between BUILD and BREAK is rendered for
+   both and shown by mode (see ByMode.tsx). Flipping the mode redraws the page
+   top to bottom in stepped rows, like a terminal repainting.
+   ========================================================================== */
+
+html[data-mode="build"] .only-break,
+html[data-mode="break"] .only-build {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-switching]::view-transition-old(root) {
+    animation: none;
+  }
+  html[data-switching]::view-transition-new(root) {
+    animation: mode-redraw 0.48s steps(16, end) both;
+  }
+}
+@keyframes mode-redraw {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* ==========================================================================
+   UI primitives. Sharp edges, mono labels, no pills.
+   ========================================================================== */
+
+@layer components {
+  .skip-link {
+    position: fixed;
+    left: 1rem;
+    top: -4rem;
+    z-index: 70;
+    padding: 0.7rem 1rem;
+    background: var(--active-accent);
+    color: var(--bg-void);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+  .skip-link:focus {
+    top: 1rem;
+  }
+
+  /* Text link with a bold underline that floods on hover. */
+  .ui-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 0.15em 0;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-main);
+    background: linear-gradient(var(--active-accent), var(--active-accent)) left bottom / 100% 2px no-repeat;
+    transition:
+      background-size 0.25s ease,
+      color 0.25s ease,
+      padding 0.25s ease;
+  }
+  .ui-link:hover {
+    background-size: 100% 100%;
+    color: var(--bg-void);
+    padding-inline: 0.35em;
+  }
+
+  /* Keeps copy that scrolls under the fixed header from colliding with the nav. */
+  .header-scrim {
+    background: linear-gradient(to bottom, var(--bg-void) 58%, color-mix(in srgb, var(--bg-void) 0%, transparent));
+  }
+
+  .ui-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    padding: 0.6em 0.8em;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    line-height: 1;
+    color: var(--text-main);
+    background: var(--bg-void);
+    border: 1px solid var(--line);
+    transition:
+      border-color 0.2s ease,
+      color 0.2s ease;
+  }
+  .ui-button:hover {
+    border-color: var(--active-accent);
+    color: var(--active-accent);
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.9em;
+    padding: 1em 1.35em;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--bg-void);
+    background: var(--active-accent);
+    border: 1px solid var(--active-accent);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+  .btn-primary:hover {
+    background: var(--bg-void);
+    color: var(--active-accent);
+  }
+
+  .mode-toggle {
+    display: flex;
+    border: 1px solid var(--line);
+    background: var(--bg-void);
+  }
+  .mode-toggle button {
+    padding: 0.6em 0.75em;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .mode-toggle button:hover {
+    color: var(--text-main);
+  }
+  /* Driven by the html attribute so the right half is lit before hydration. */
+  html[data-mode="build"] .mode-toggle [data-mode-option="build"] {
+    background: var(--primary);
+    color: var(--bg-void);
+    font-weight: 600;
+  }
+  html[data-mode="break"] .mode-toggle [data-mode-option="break"] {
+    background: var(--alert);
+    color: var(--bg-void);
+    font-weight: 600;
+  }
+
+  /* Header section links: mono, quiet, the current one underlined in the accent. */
+  .section-nav ol {
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+  }
+  .section-nav a {
+    display: inline-block;
+    padding: 0.45rem 0 0.35rem;
+    border-bottom: 2px solid transparent;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .section-nav a:hover {
+    color: var(--text-main);
+  }
+  .section-nav a[aria-current] {
+    border-bottom-color: var(--active-accent);
+    color: var(--text-main);
+  }
+
+  /* The hero headline is the mode switch: the sentence for the side you're on
+     is solid, the other is an outline. Lit state comes from html[data-mode]. */
+  .hero-title {
+    margin-top: 0.9rem;
+  }
+  .hero-title button {
+    display: block;
+    text-align: left;
+    font-family: var(--font-serif);
+    font-size: clamp(2.2rem, 9.4vw, 3.7rem);
+    line-height: 1;
+    color: color-mix(in srgb, var(--text-muted) 38%, transparent);
+    transition: color 0.3s ease;
+  }
+  @supports (-webkit-text-stroke: 1px black) {
+    .hero-title button {
+      color: transparent;
+      -webkit-text-stroke: 1px color-mix(in srgb, var(--text-muted) 62%, transparent);
+    }
+  }
+  .hero-title button:hover {
+    color: color-mix(in srgb, var(--text-main) 22%, transparent);
+  }
+  html[data-mode="build"] .hero-title [data-side="build"],
+  html[data-mode="break"] .hero-title [data-side="break"] {
+    color: var(--text-main);
+    -webkit-text-stroke: 0;
+    cursor: default;
+  }
+  html[data-mode="break"] .hero-title [data-side="break"] {
+    color: var(--alert);
+  }
+  .hero-sides {
+    margin-top: 1.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    line-height: 2;
+    color: var(--text-muted);
+  }
+  button.ui-link {
+    font-size: inherit;
+  }
+
+  /* Contact rows: mark, label and handle. */
+  .social-mark svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    fill: currentColor;
+  }
+  .social-mark .social-stroke {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+  }
+  .social-mono {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .social-list {
+    border-top: 1px solid var(--line);
+  }
+  .social-list a {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.85rem 0.25rem;
+    border-bottom: 1px solid var(--line);
+    transition: background-color 0.2s ease;
+  }
+  .social-list a:hover {
+    background: color-mix(in srgb, var(--active-accent) 8%, transparent);
+  }
+  .social-list li {
+    max-width: none;
+  }
+  .social-mark {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid var(--line);
+    color: var(--text-main);
+  }
+
+  /* CTF progress: one row per track, one bar per flag. */
+  .flag-board > div {
+    padding: 1rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .flag-board > div:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+  .flag-board dt {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-main);
+  }
+  .flag-count {
+    color: var(--active-accent);
+  }
+  .flag-squares {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.7rem;
+  }
+  .flag-squares span {
+    width: 1.5rem;
+    height: 0.5rem;
+    border: 1px solid var(--text-muted);
+  }
+  .flag-squares span.is-found {
+    border-color: var(--active-accent);
+    background: var(--active-accent);
+  }
+
+  /* Response headers, as a plain two-line list. */
+  .header-check li {
+    padding: 0.7rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .header-check li:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+  .header-check code {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-main);
+  }
+  .header-check span {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  /* Contact form: sharp fields, label above, error below. */
+  .contact-form {
+    display: grid;
+    gap: 1.1rem;
+    margin-top: 1.5rem;
+  }
+  .field label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--text-muted);
+  }
+  .field input,
+  .field textarea {
+    width: 100%;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--line);
+    background: var(--bg-void);
+    color: var(--text-main);
+    font: inherit;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease;
+  }
+  .field textarea {
+    resize: vertical;
+    min-height: 9rem;
+  }
+  .field input:hover,
+  .field textarea:hover {
+    border-color: color-mix(in srgb, var(--active-accent) 50%, var(--line));
+  }
+  .field input:focus-visible,
+  .field textarea:focus-visible {
+    outline: none;
+    border-color: var(--active-accent);
+    box-shadow: inset 0 0 0 1px var(--active-accent);
+  }
+  .field [aria-invalid="true"] {
+    border-color: var(--alert);
+  }
+  .field-error {
+    margin-top: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--alert);
+  }
+  .form-status {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--active-accent);
+  }
+  .form-status.is-error {
+    color: var(--alert);
+  }
+  .btn-primary:disabled {
+    cursor: progress;
+    opacity: 0.7;
+  }
+  /* Honeypot: off-screen rather than display:none, which some bots skip. */
+  .hp {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  /* Phone menu (native <dialog>). */
+  dialog.mobile-menu {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 1rem;
+    border: 0;
+    background: var(--bg-void);
+    color: var(--text-main);
+  }
+  .mobile-menu-link {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    line-height: 1.1;
+  }
+
+  .site-footer {
+    border-top: 1px solid var(--line);
+    background: var(--bg-void);
+  }
+  .footer-link {
+    color: var(--text-main);
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+    text-underline-offset: 4px;
+    transition: text-decoration-color 0.2s ease;
+  }
+  .footer-link:hover {
+    text-decoration-color: var(--active-accent);
+  }
+
+  /* Hidden on phones, where it would collide with the hero copy. */
+  .scroll-hint {
+    position: absolute;
+    right: 1rem;
+    bottom: 2.5rem;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--text-muted);
+  }
+  .scroll-hint::after {
+    content: "";
+    width: 1px;
+    height: 2.75rem;
+    background: var(--active-accent);
+    transform-origin: top;
+    animation: scroll-hint 2.2s ease-in-out infinite;
+  }
+  @media (min-width: 768px) {
+    .scroll-hint {
+      right: 2.5rem;
+      bottom: 3.5rem;
+      display: flex;
+    }
+  }
+
+  /* Section copy: placed by hand, not on a card. */
+  .panel h2 {
+    font-family: var(--font-serif);
+    font-size: clamp(2rem, 4.2vw, 3rem);
+    line-height: 1;
+    color: var(--text-main);
+  }
+  .panel h3 {
+    font-family: var(--font-serif);
+    font-size: 1.55rem;
+    line-height: 1.1;
+    color: var(--text-main);
+  }
+  .panel .meta {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+
+  /* A near-opaque sheet so copy stays readable over the 3D. Solid, no blur,
+     no box: one short accent rule at the top-left corner marks where it starts. */
+  .pane {
+    position: relative;
+    padding: 1.75rem 1.1rem 1.6rem;
+    background: color-mix(in srgb, var(--bg-void) 93%, transparent);
+  }
+  .pane::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 3.5rem;
+    height: 2px;
+    background: var(--active-accent);
+  }
+  @media (min-width: 768px) {
+    .pane {
+      padding: 2.6rem 2.75rem 2.5rem;
+    }
+  }
+
+  /* About: photo beside the introduction. */
+  .about {
+    display: grid;
+    gap: 1.75rem;
+    align-items: start;
+  }
+  .about .portrait {
+    width: min(15rem, 62vw);
+  }
+  @media (min-width: 768px) {
+    .about {
+      grid-template-columns: 15rem minmax(0, 1fr);
+      gap: 2.75rem;
+    }
+    .about .portrait {
+      width: auto;
+    }
+  }
+  @media (min-width: 1024px) {
+    .about {
+      grid-template-columns: 17rem minmax(0, 1fr);
+      gap: 3.5rem;
+    }
+  }
+  .facts > div {
+    display: grid;
+    gap: 0.15rem 1.5rem;
+    padding: 0.7rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .facts > div:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+  .facts dt {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    line-height: 1.9;
+    color: var(--text-muted);
+  }
+  .facts dd {
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: var(--text-main);
+  }
+  @media (min-width: 640px) {
+    .facts > div {
+      grid-template-columns: 6.5rem minmax(0, 1fr);
+    }
+  }
+
+  /* Skills as a port scan: port and service, what it is, the tools. Ruled rows, no boxes. */
+  .scan > li {
+    display: grid;
+    gap: 0.9rem;
+    max-width: none;
+    padding: 1.6rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .scan > li:last-child {
+    padding-bottom: 0.25rem;
+  }
+  .scan h3 {
+    font-size: 1.4rem;
+  }
+  .scan-port {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+  }
+  .scan-port span {
+    margin-right: 0.75em;
+    color: var(--active-accent);
+  }
+  @media (min-width: 1024px) {
+    .scan > li {
+      grid-template-columns: 9.5rem minmax(0, 1fr) minmax(0, 1.05fr);
+      gap: 2.5rem;
+    }
+    .scan-port span {
+      display: block;
+    }
+    .scan .tools {
+      padding-top: 0.35rem;
+    }
+  }
+
+  .scan > li {
+    transition: background-color 0.2s ease;
+  }
+  .scan > li:hover {
+    background: color-mix(in srgb, var(--active-accent) 5%, transparent);
+  }
+  /* Rows print in one at a time when the scan scrolls into view (armed by InView.tsx). */
+  [data-armed] .scan > li {
+    clip-path: inset(0 100% 0 0);
+  }
+  [data-armed][data-inview] .scan > li {
+    animation: scan-row 0.5s steps(14, end) both;
+  }
+  [data-inview] .scan > li:nth-child(2) { animation-delay: 0.09s; }
+  [data-inview] .scan > li:nth-child(3) { animation-delay: 0.18s; }
+  [data-inview] .scan > li:nth-child(4) { animation-delay: 0.27s; }
+  [data-inview] .scan > li:nth-child(5) { animation-delay: 0.36s; }
+  [data-inview] .scan > li:nth-child(6) { animation-delay: 0.45s; }
+  [data-inview] .scan > li:nth-child(7) { animation-delay: 0.54s; }
+  [data-inview] .scan > li:nth-child(8) { animation-delay: 0.63s; }
+  [data-inview] .scan > li:nth-child(n + 9) { animation-delay: 0.72s; }
+
+  /* Tool names as a run of words that wraps like a sentence. Real marks sit before their name. */
+  .tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-self: start;
+    gap: 0.5rem 1.15rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    line-height: 1.5;
+    color: var(--text-main);
+  }
+  .tools li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+  }
+  .tool-mark {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 0.95rem;
+    height: 0.95rem;
+    fill: var(--active-accent);
+  }
+  .built-with {
+    max-width: none;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    line-height: 1.85;
+    color: var(--text-muted);
+  }
+  .built-with span {
+    color: var(--active-accent);
+  }
+
+  /* Sentence lists with a hanging dash instead of bullets. */
+  .plain-list li {
+    position: relative;
+    padding-left: 1.4rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-main);
+  }
+  .plain-list li + li {
+    margin-top: 0.7rem;
+  }
+  .plain-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.75em;
+    width: 0.7rem;
+    height: 1px;
+    background: var(--active-accent);
+  }
+
+  /* A line pointing at the other side of the site. */
+  .other-side {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    line-height: 2;
+    color: var(--text-muted);
+  }
+
+  /* Projects: alternating split rows, media on one side and copy on the other. */
+  .project {
+    display: grid;
+    gap: 1.25rem;
+    align-items: center;
+    max-width: none;
+  }
+  @media (min-width: 1024px) {
+    .project {
+      grid-template-columns: 1.15fr 1fr;
+      gap: 3.5rem;
+    }
+    .project.is-flipped {
+      grid-template-columns: 1fr 1.15fr;
+    }
+    .project.is-flipped .project-media {
+      order: 2;
+    }
+  }
+  .project-media {
+    margin: 0;
+    border: 1px solid var(--line);
+    background: var(--bg-surface);
+  }
+  .project-media img {
+    display: block;
+  }
+  .project-media figcaption {
+    padding: 0.6rem 0.8rem;
+    border-top: 1px solid var(--line);
+    background: var(--bg-void);
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    color: var(--text-muted);
+  }
+  .project-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--line);
+  }
+  .project-gallery li {
+    max-width: none;
+    background: var(--bg-void);
+  }
+  .project-gallery li + li {
+    border-left: 1px solid var(--line);
+  }
+  .project-gallery span {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+  }
+  .project-icon {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+  }
+  .project-icon img {
+    width: 7rem;
+    height: auto;
+  }
+
+  /* Screenshots open full size. */
+  .shot-open {
+    position: relative;
+    display: block;
+    width: 100%;
+    cursor: zoom-in;
+  }
+  .shot-open > span {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    padding: 0.45rem 0.65rem;
+    background: var(--bg-void);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--text-main);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .shot-open:hover > span,
+  .shot-open:focus-visible > span {
+    opacity: 1;
+  }
+  @media (hover: none) {
+    .shot-open > span {
+      opacity: 1;
+    }
+  }
+
+  /* Labs: things to play with on the page. Same frame as a project picture. */
+  .lab-stages {
+    display: flex;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-void);
+  }
+  .lab-stages button {
+    flex: 1 1 auto;
+    padding: 0.8rem 0.9rem;
+    border-right: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    text-align: left;
+    color: var(--text-muted);
+    transition: color 0.2s ease;
+  }
+  .lab-stages button:last-child {
+    border-right: 0;
+  }
+  .lab-stages button:hover {
+    color: var(--text-main);
+  }
+  .lab-stages button[aria-pressed="true"] {
+    color: var(--bg-void);
+    background: var(--active-accent);
+  }
+  .lab-body {
+    padding: 1.25rem 1.1rem 1.1rem;
+  }
+  .lab-rule {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--text-muted);
+  }
+  .lab-rule span {
+    color: var(--text-main);
+  }
+  .lab-request {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.6rem;
+    margin-top: 1.1rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+  }
+  .lab-request label {
+    color: var(--active-accent);
+    white-space: nowrap;
+  }
+  .lab-request input {
+    flex: 1 1 11rem;
+    min-width: 0;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--line);
+    background: var(--bg-void);
+    color: var(--text-main);
+    font: inherit;
+  }
+  .lab-request input:focus-visible {
+    outline: none;
+    border-color: var(--active-accent);
+    box-shadow: inset 0 0 0 1px var(--active-accent);
+  }
+  .lab-response {
+    min-height: 9.5rem;
+    margin-top: 1rem;
+    padding: 0.85rem 0.9rem;
+    background: var(--bg-void);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    line-height: 1.8;
+    color: var(--text-main);
+    overflow-wrap: anywhere;
+  }
+  .lab-response p {
+    max-width: none;
+  }
+  .lab-trace {
+    color: var(--text-muted);
+  }
+  .lab-trace span {
+    display: inline-block;
+    min-width: 7.5rem;
+  }
+  .lab-status {
+    margin-top: 0.4rem;
+    color: var(--active-accent);
+  }
+  .lab-status.is-refused {
+    color: var(--text-muted);
+  }
+  .lab-win {
+    margin-top: 0.5rem;
+    color: var(--active-accent);
+  }
+  .lab-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    max-width: none;
+    margin-top: 0.9rem;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--text-muted);
+  }
+
+  /* DES lab: two short inputs, a round slider, the result. */
+  .des-inputs {
+    display: grid;
+    gap: 0.9rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+  }
+  @media (min-width: 480px) {
+    .des-inputs {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .des-inputs label,
+  .des-round span {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--text-muted);
+  }
+  .des-inputs input {
+    width: 100%;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--line);
+    background: var(--bg-void);
+    color: var(--text-main);
+    font: inherit;
+  }
+  .des-inputs input:focus-visible {
+    outline: none;
+    border-color: var(--active-accent);
+    box-shadow: inset 0 0 0 1px var(--active-accent);
+  }
+  .des-round {
+    display: block;
+    margin-top: 1.1rem;
+  }
+  .des-round span {
+    color: var(--active-accent);
+  }
+  .lab-range {
+    appearance: none;
+    display: block;
+    width: 100%;
+    height: 1.5rem;
+    background: transparent;
+    cursor: ew-resize;
+  }
+  .lab-range::-webkit-slider-runnable-track {
+    height: 2px;
+    background: var(--line);
+  }
+  .lab-range::-webkit-slider-thumb {
+    appearance: none;
+    width: 0.9rem;
+    height: 0.9rem;
+    margin-top: calc(1px - 0.45rem);
+    border-radius: 0;
+    background: var(--active-accent);
+  }
+  .lab-range::-moz-range-track {
+    height: 2px;
+    background: var(--line);
+  }
+  .lab-range::-moz-range-thumb {
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 0;
+    border-radius: 0;
+    background: var(--active-accent);
+  }
+  .des-out {
+    display: grid;
+    gap: 0.5rem 2rem;
+    margin-top: 0.9rem;
+    font-family: var(--font-mono);
+  }
+  @media (min-width: 480px) {
+    .des-out {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .des-out dt {
+    font-size: 0.66rem;
+    color: var(--text-muted);
+  }
+  .des-out dd {
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    overflow-wrap: anywhere;
+  }
+
+  /* A pane that runs the full width: words on the left, the live part on the right. */
+  .wide-pane {
+    display: grid;
+    gap: 1.75rem;
+    align-items: start;
+  }
+  @media (min-width: 1024px) {
+    .wide-pane {
+      grid-template-columns: minmax(0, 21rem) minmax(0, 1fr);
+      gap: 3.5rem;
+    }
+  }
+  @media (min-width: 640px) {
+    .wide-pane .policy-test,
+    .wide-pane .recon {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 2.5rem;
+    }
+    .wide-pane .recon > div {
+      grid-template-columns: 5.5rem minmax(0, 1fr);
+    }
+    /* Two columns: the bottom rule belongs to the last row of each. */
+    .wide-pane .policy-test li:nth-last-child(2),
+    .wide-pane .recon > div:nth-last-child(2):nth-child(odd) {
+      border-bottom: 1px solid var(--line);
+    }
+  }
+
+  /* The page attacking its own policy: one ruled row per attempt. */
+  .policy-test li {
+    display: grid;
+    gap: 0.1rem;
+    padding: 0.7rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .policy-test li:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+  .policy-name {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-main);
+  }
+  .policy-what {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .policy-verdict {
+    margin-top: 0.2rem;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--text-muted);
+  }
+  .policy-verdict.is-blocked {
+    color: var(--primary);
+  }
+  .policy-verdict.is-open {
+    color: var(--alert);
+  }
+  .policy-summary {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    line-height: 1.7;
+    color: var(--text-main);
+  }
+  .recon dd {
+    overflow-wrap: anywhere;
+  }
+
+  /* Line diagrams for projects without screenshots. */
+  .diagram {
+    display: block;
+    width: 100%;
+    height: auto;
+    padding: 1rem;
+    fill: none;
+    stroke: var(--dim);
+    stroke-width: 1.25;
+  }
+  .diagram rect,
+  .diagram circle {
+    fill: var(--bg-void);
+  }
+  .diagram text {
+    fill: var(--text-muted);
+    stroke: none;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  .diagram .note {
+    font-size: 10px;
+  }
+  .diagram .hot,
+  .diagram .hot rect {
+    stroke: var(--active-accent);
+  }
+  .diagram .hot text,
+  .diagram .hot-text {
+    fill: var(--active-accent);
+  }
+  .diagram .dashed {
+    stroke-dasharray: 4 3;
+  }
+
+  /* Certifications grouped under their issuer. */
+  .certs {
+    margin-top: 1.25rem;
+  }
+  .certs > div {
+    display: grid;
+    gap: 0.35rem 1.5rem;
+    padding: 0.85rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .certs > div:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+  .certs dt {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    line-height: 1.9;
+    color: var(--text-muted);
+  }
+  .certs dd {
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: var(--text-main);
+  }
+  @media (min-width: 640px) {
+    .certs > div {
+      grid-template-columns: 7.5rem minmax(0, 1fr);
+    }
+    /* Issuer in the first column, its certifications stacked in the second. */
+    .certs dt {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .certs dd {
+      grid-column: 2;
+    }
+  }
+
+  /* Experience and education: a vertical rule with square commit markers. */
+  .timeline {
+    border-left: 1px solid var(--line);
+  }
+  .timeline > li {
+    position: relative;
+    max-width: none;
+    padding: 0 0 2.75rem 1.5rem;
+  }
+  .timeline > li:last-child {
+    padding-bottom: 0;
+  }
+  .timeline > li::before {
+    content: "";
+    position: absolute;
+    left: -4px;
+    top: 0.3rem;
+    width: 7px;
+    height: 7px;
+    background: var(--active-accent);
+  }
+
+  /* Photo tinted to the palette (luminosity over the accent), true colour on hover. */
+  .portrait {
+    position: relative;
+    margin: 0;
+    background: var(--active-accent);
+    border: 1px solid var(--line);
+  }
+  .portrait img {
+    display: block;
+    filter: grayscale(1) contrast(1.12);
+    mix-blend-mode: luminosity;
+    transition:
+      filter 0.4s ease,
+      mix-blend-mode 0.4s;
+  }
+  .portrait::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / 0.22) 2px 3px);
+    transition: opacity 0.4s ease;
+  }
+  .portrait:hover img {
+    filter: none;
+    mix-blend-mode: normal;
+  }
+  .portrait:hover::after {
+    opacity: 0;
+  }
+}
+
+@keyframes scroll-hint {
+  0% {
+    transform: scaleY(0);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 0;
+  }
+}
+
+@keyframes scan-row {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* ==========================================================================
+   The 3D monitor as a click target. An invisible button tracks the CRT glass
+   (CrtHotspot.tsx); on hover it frames the screen and says what it does.
+   ========================================================================== */
+
+.crt-hotspot {
+  position: fixed;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  cursor: pointer;
+  outline: 1px solid transparent;
+  outline-offset: 6px;
+  transition: outline-color 0.2s ease;
+}
+.crt-hotspot[hidden] {
+  display: none;
+}
+.crt-hotspot span {
+  padding: 0.45rem 0.65rem;
+  background: var(--active-accent);
+  color: var(--bg-void);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.crt-hotspot:hover {
+  outline-color: var(--active-accent);
+}
+.crt-hotspot:hover span {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   Screenshot viewer (native <dialog>)
+   ========================================================================== */
+
+dialog.lightbox {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--text-main);
+}
+dialog.lightbox[open] {
+  display: grid;
+  place-items: center;
+}
+dialog.lightbox::backdrop {
+  background: color-mix(in srgb, var(--bg-void) 94%, transparent);
+}
+.lightbox-frame {
+  max-width: min(100%, 90rem);
+  border: 1px solid var(--line);
+  background: var(--bg-void);
+}
+.lightbox-frame img {
+  display: block;
+  margin-inline: auto;
+}
+.lightbox-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0.8rem;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Scene 0: boot screen. Works without JS: lines reveal in CSS and the whole
+   overlay removes itself at 2.6 s if JS never dismisses it.
+   ========================================================================== */
+
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.5rem;
+  background: var(--bg-void);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.9;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: opacity 0.45s ease;
+  animation: boot-auto-out 0.4s ease 2.6s forwards;
+}
+.boot.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+.boot-lines p {
+  opacity: 0;
+  animation: boot-line 0s linear forwards;
+}
+.boot-lines p:nth-child(1) { animation-delay: 0.05s; }
+.boot-lines p:nth-child(2) { animation-delay: 0.22s; }
+.boot-lines p:nth-child(3) { animation-delay: 0.4s; }
+.boot-lines p:nth-child(4) { animation-delay: 0.58s; }
+.boot-lines p:nth-child(5) { animation-delay: 0.76s; }
+.boot-lines p:nth-child(6) { animation-delay: 0.94s; color: var(--active-accent); }
+.boot-lines p:last-child::after {
+  content: "_";
+  animation: blink 0.9s steps(1) infinite;
+}
+.boot-hint {
+  color: var(--text-muted);
+}
+[data-booted] .boot {
+  display: none;
+}
+@media (min-width: 768px) {
+  .boot {
+    padding: 2.5rem;
+  }
+}
+
+@keyframes boot-line {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes boot-auto-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+   Terminal overlay (native <dialog>)
+   ========================================================================== */
+
+dialog.terminal {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-main);
+}
+dialog.terminal::backdrop {
+  background: color-mix(in srgb, var(--bg-void) 84%, transparent);
+}
+.terminal-window {
+  position: absolute;
+  left: clamp(0.5rem, 7vw, 7rem);
+  top: clamp(0.5rem, 9vh, 7.5rem);
+  display: flex;
+  flex-direction: column;
+  width: min(60rem, calc(100% - 1rem));
+  /* --visible-height follows the on-screen keyboard on phones (set in Terminal.tsx). */
+  height: min(44rem, calc(var(--visible-height, 100dvh) - clamp(1rem, 14vh, 9rem)));
+  background: var(--bg-void);
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+}
+.terminal-window:focus-within {
+  border-color: var(--active-accent);
+}
+/* Scanlines over the whole window. */
+.terminal-window::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / 0.2) 2px 3px);
+}
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+.terminal-close {
+  position: relative;
+  z-index: 1;
+  padding: 0.2rem 0.4rem;
+  color: var(--text-main);
+}
+.terminal-close:hover {
+  color: var(--active-accent);
+}
+.terminal-output {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.9rem;
+  /* Faint phosphor bloom on the text. */
+  text-shadow: 0 0 9px color-mix(in srgb, var(--active-accent) 28%, transparent);
+}
+.terminal-output > div {
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.terminal-input-row {
+  display: flex;
+  align-items: baseline;
+  padding: 0.5rem 0.9rem 0.9rem;
+  white-space: pre;
+}
+.terminal-input-row input {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  color: var(--text-main);
+  font: inherit;
+  caret-color: var(--active-accent);
+}
+.terminal-input-row input:focus-visible {
+  outline: none;
+}
+/* Passwords: typed, but not shown, like su on a real box. */
+.terminal-input-row input.is-secret {
+  color: transparent;
+  text-shadow: none;
+}
+/* Extra keys and common commands, for screens without a keyboard. */
+.terminal-keys {
+  position: relative;
+  z-index: 1;
+  display: none;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.5rem 0.9rem 0;
+  scrollbar-width: none;
+}
+.terminal-keys button {
+  flex-shrink: 0;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--line);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.68rem;
+  line-height: 1;
+}
+.terminal-keys button:active {
+  border-color: var(--active-accent);
+  color: var(--active-accent);
+}
+@media (pointer: coarse) {
+  .terminal-keys {
+    display: flex;
+  }
+}
+/* A command in the output that runs when clicked. */
+.term-run {
+  position: relative;
+  z-index: 1;
+  color: var(--text-main);
+  font: inherit;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--active-accent);
+  text-underline-offset: 3px;
+}
+.term-run:hover {
+  background: var(--active-accent);
+  color: var(--bg-void);
+  text-shadow: none;
+}
+.tone-accent {
+  color: var(--active-accent);
+}
+.tone-muted {
+  color: var(--text-muted);
+}
+.tone-alert {
+  color: var(--alert);
+}
+.term-link {
+  position: relative;
+  z-index: 1;
+  color: var(--text-main);
+  text-decoration: underline;
+  text-decoration-color: var(--active-accent);
+  text-underline-offset: 3px;
+}
+.term-link:hover {
+  background: var(--active-accent);
+  color: var(--bg-void);
+}
+
+/* ==========================================================================
+   Reduced motion: no boot, no looping hints. Scene changes become fades
+   (handled in the camera rig).
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .boot {
+    display: none;
+  }
+  .scroll-hint::after {
+    animation: none;
+  }
+  .hero-title button {
+    transition: none;
+  }
+  [data-armed] .scan > li {
+    clip-path: none;
+    animation: none;
+  }
+  .ui-link,
+  .ui-button,
+  .btn-primary {
+    transition: none;
+  }
+}
