@@ -170,7 +170,8 @@ html[data-mode="break"] .only-build {
     display: inline-flex;
     align-items: center;
     gap: 0.4em;
-    padding: 0.15em 0;
+    /* Tall enough to be a 24px tap target on its own line. */
+    padding: 0.4em 0;
     font-family: var(--font-mono);
     font-size: 0.72rem;
     color: var(--text-main);
@@ -362,6 +363,10 @@ html[data-mode="break"] .only-build {
   }
   .social-list li {
     max-width: none;
+  }
+  .social-list a > span:nth-child(2) {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .social-mark {
     display: grid;
@@ -588,6 +593,8 @@ html[data-mode="break"] .only-build {
      no box: one short accent rule at the top-left corner marks where it starts. */
   .pane {
     position: relative;
+    /* As a grid item it may shrink below its longest word (an email address on a 320px phone). */
+    min-width: 0;
     padding: 1.75rem 1.1rem 1.6rem;
     background: color-mix(in srgb, var(--bg-void) 93%, transparent);
   }
@@ -1464,18 +1471,25 @@ dialog.terminal::backdrop {
   background: color-mix(in srgb, var(--bg-void) 84%, transparent);
 }
 .terminal-window {
+  /* Phones: nearly edge to edge. Wider screens: set in from the left, off-centre. */
+  --edge: 0.5rem;
   position: absolute;
-  left: clamp(0.5rem, 7vw, 7rem);
+  left: var(--edge);
   top: clamp(0.5rem, 9vh, 7.5rem);
   display: flex;
   flex-direction: column;
-  width: min(60rem, calc(100% - 1rem));
+  width: min(60rem, calc(100% - 2 * var(--edge)));
   /* --visible-height follows the on-screen keyboard on phones (set in Terminal.tsx). */
   height: min(44rem, calc(var(--visible-height, 100dvh) - clamp(1rem, 14vh, 9rem)));
   background: var(--bg-void);
   border: 1px solid var(--line);
   font-family: var(--font-mono);
   font-size: 0.74rem;
+}
+@media (min-width: 640px) {
+  .terminal-window {
+    --edge: clamp(1.5rem, 7vw, 7rem);
+  }
 }
 .terminal-window:focus-within {
   border-color: var(--active-accent);

@@ -55,3 +55,6 @@ desktop.ini
 !.vscode/extensions.json
 !.vscode/settings.json
 *.swp
+
+.vercel
+.env*

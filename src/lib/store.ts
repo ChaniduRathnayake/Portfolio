@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { FLAG_HASHES } from "./ctf";
 import { applyMode } from "./modeSwitch";
 import { telemetry } from "./telemetry";
 
@@ -121,7 +122,10 @@ export const useSiteStore = create<SiteState>((set, get) => ({
     let flags: string[] = [];
     try {
       const parsed: unknown = JSON.parse(localStorage.getItem(STORAGE_KEYS.flags) ?? "[]");
-      if (Array.isArray(parsed)) flags = parsed.filter((f): f is string => typeof f === "string");
+      // Storage is the visitor's to edit: keep only real flag hashes, once each.
+      if (Array.isArray(parsed)) {
+        flags = [...new Set(parsed.filter((f): f is string => typeof f === "string" && Object.hasOwn(FLAG_HASHES, f)))];
+      }
     } catch {
       // Corrupt or blocked storage: start with zero flags.
     }

@@ -35,7 +35,7 @@ export function TerminalButton() {
       aria-haspopup="dialog"
       aria-expanded={open}
       aria-keyshortcuts="`"
-      aria-label={`Open terminal (backtick key). ${flags} of ${FLAG_TOTAL} flags found.`}
+      aria-label={`Terminal, ${flags}/${FLAG_TOTAL} flags found. Shortcut: backtick.`}
       onClick={() => setOpen(true)}
     >
       <span aria-hidden="true" className="text-muted">
